@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chores">
+<meta name="theme-color" content="#F3F7FF">
+<title>Chores</title>
+<style>
+:root{
+  --paper:#F3F7FF; --card:#FFFFFF; --ink:#14213D; --muted:#5B6B8C; --line:#D5DFF0;
+  --done:#1F9D6B; --danger:#C2364B; --focus:#4D7CFE;
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+body{
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+}
+input{-webkit-user-select:text;user-select:text}
+#app{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;min-height:48px}
+.date{font-size:20px;font-weight:800}
+.gear{width:44px;height:44px;border-radius:50%;font-size:20px;opacity:.5}
+.back{width:48px;height:48px;border-radius:50%;background:var(--card);border:2px solid var(--line);font-size:30px;font-weight:700;line-height:1;flex:none}
+
+/* Home */
+.kids{display:grid;gap:14px}
+.kid{display:flex;align-items:center;gap:16px;width:100%;padding:18px;border-radius:24px;background:var(--card);border:2px solid var(--line);text-align:left}
+.avatar{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-size:42px;flex:none;background:color-mix(in srgb,var(--c,#4D7CFE) 18%,white)}
+.avatar.sm{width:48px;height:48px;font-size:28px}
+.kmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.name{font-size:26px;font-weight:800;line-height:1.1}
+.sub{color:var(--muted);font-size:16px}
+.bar{display:block;height:8px;border-radius:4px;overflow:hidden;margin-top:6px;background:color-mix(in srgb,var(--c,#4D7CFE) 15%,white)}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--c,#4D7CFE)}
+.starcount{font-size:22px;font-weight:800;white-space:nowrap;flex:none;display:inline-block}
+
+/* Kid view */
+.kname{font-size:24px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.period{font-size:18px;font-weight:800;color:var(--muted);margin:20px 4px 10px}
+.chore{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;padding:12px 16px;margin-bottom:10px;background:var(--card);border:2px solid var(--line);border-radius:20px;text-align:left}
+.chore .em{font-size:40px;width:48px;text-align:center;flex:none}
+.chore .t{flex:1;font-size:21px;font-weight:700;line-height:1.2}
+.chore .t small{font-size:15px;color:var(--muted);font-weight:700}
+.check{width:40px;height:40px;border-radius:50%;border:3px solid var(--line);display:grid;place-items:center;font-size:22px;font-weight:900;color:#fff;flex:none}
+.chore.done{background:color-mix(in srgb,var(--done) 10%,white);border-color:color-mix(in srgb,var(--done) 40%,white)}
+.chore.done .t{color:var(--muted)}
+.chore.done .check{background:var(--done);border-color:var(--done)}
+.alldone{text-align:center;font-size:22px;font-weight:800;padding:14px 0 4px}
+.fly{position:fixed;font-size:30px;line-height:30px;pointer-events:none;z-index:20}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+.pop{animation:pop .35s ease-out}
+
+/* PIN */
+.pin{display:flex;flex-direction:column;align-items:center;gap:20px;padding-top:12px}
+.pinmsg{font-size:19px;font-weight:800;text-align:center;min-height:24px}
+.dots{display:flex;gap:14px}
+.dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--ink)}
+.dots i.f{background:var(--ink)}
+.pad{display:grid;grid-template-columns:repeat(3,72px);gap:14px}
+.pad button{height:72px;border-radius:50%;background:var(--card);border:2px solid var(--line);font-size:28px;font-weight:700}
+
+/* Parent */
+.tabs{display:flex;gap:4px;background:var(--line);padding:4px;border-radius:14px;margin-bottom:16px}
+.tab{flex:1;padding:10px 2px;border-radius:10px;font-weight:700;font-size:15px}
+.tab.on{background:var(--card)}
+.list{margin-top:12px}
+.row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 12px;margin-bottom:8px}
+.row .em{font-size:28px;flex:none}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.icon{width:38px;height:38px;border-radius:10px;background:var(--paper);font-size:16px;flex:none}
+.icon:disabled{opacity:.25}
+.groupttl{font-weight:800;color:var(--muted);margin:20px 2px 8px;font-size:16px}
+.btn{padding:14px 18px;border-radius:14px;font-weight:800;font-size:17px;background:var(--ink);color:#fff}
+.btn.sm{padding:10px 16px;font-size:16px}
+.btn.alt{background:var(--card);color:var(--ink);border:2px solid var(--line)}
+.btn.danger{background:var(--card);color:var(--danger);border:2px solid color-mix(in srgb,var(--danger) 35%,white)}
+.btn.block{display:block;width:100%}
+.actions{display:flex;gap:10px;margin-top:22px}
+.actions .btn{flex:1}
+label.f{display:block;margin:16px 0 6px;font-weight:700;font-size:15px;color:var(--muted)}
+input[type=text],input[type=number]{width:100%;font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+input.redeem{width:70px;padding:9px 6px;text-align:center;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:10px 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);font-weight:700;font-size:15px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.days .chip{width:42px;padding:10px 0;text-align:center}
+.emoji-row{display:flex;gap:10px;align-items:center}
+.emoji-row .big{font-size:40px;width:64px;height:64px;display:grid;place-items:center;flex:none;background:var(--card);border:2px solid var(--line);border-radius:16px}
+.emojis{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:10px}
+.emojis button{font-size:26px;padding:6px 0;border-radius:10px}
+.emojis button.on{background:var(--line)}
+.note{color:var(--muted);font-size:15px;line-height:1.45;margin:8px 2px}
+.empty{text-align:center;padding:36px 12px;color:var(--muted);font-size:17px;line-height:1.5}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+@media (prefers-reduced-motion: reduce){.pop{animation:none}.toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+'use strict';
+
+const KEY = 'kitchen-chores-v1';
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY1 = ['S','M','T','W','T','F','S'];
+const PERIODS = [{id:'morning',label:'Morning',icon:'☀️'},{id:'evening',label:'Evening',icon:'🌙'}];
+const KID_COLORS = ['#4D7CFE','#F2547D','#7B5CF5','#12A3A3','#F08C00','#2F9E44'];
+const CHORE_EMOJIS = ['🛏️','🪥','👕','🧦','🧺','🍽️','🥣','🧹','🧽','🗑️','♻️','🐶','🐱','🌱','📚','🎒','✏️','🎹','🚿','🛁','👟','🧸','🥪','💧'];
+const KID_EMOJIS = ['🦊','🐼','🦄','🐯','🐸','🐙','🦋','🐨','🐵','🐰','🦁','🐳','🌟','🌈','🚀','🌻'];
+const IDLE_MS = 3 * 60 * 1000; // return to home screen after 3 minutes without a tap
+
+const $app = document.getElementById('app');
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let S = load();
+let view = {name:'home'};
+let draft = null;
+let pinBuf = '', pinFirst = null, pinMsg = '', pinChange = false;
+let lastDay = dateKey();
+let lastTouch = Date.now();
+
+/* ---------- storage ---------- */
+function blank(){ return {v:1,pin:null,kids:[],chores:[],done:{},stars:{},lastBackup:null}; }
+function normalize(d){
+  const b = blank();
+  if (!d || typeof d !== 'object') return b;
+  return {
+    v:1,
+    pin: typeof d.pin === 'string' ? d.pin : null,
+    kids: Array.isArray(d.kids) ? d.kids : [],
+    chores: Array.isArray(d.chores) ? d.chores : [],
+    done: d.done && typeof d.done === 'object' ? d.done : {},
+    stars: d.stars && typeof d.stars === 'object' ? d.stars : {},
+    lastBackup: d.lastBackup || null
+  };
+}
+function load(){
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch(e) { return blank(); }
+  if (!raw) return blank();
+  try { return normalize(JSON.parse(raw)); }
+  catch(e){
+    // Keep the unreadable data rather than overwrite it.
+    try { localStorage.setItem(KEY + '-unreadable-' + Date.now(), raw); } catch(_){}
+    return blank();
+  }
+}
+function save(){
+  const cutoff = dateKey(new Date(Date.now() - 90*864e5));
+  for (const k of Object.keys(S.done)) if (k < cutoff) delete S.done[k];
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ toast("Couldn't save. Storage may be full or blocked."); }
+}
+
+/* ---------- helpers ---------- */
+function dateKey(d = new Date()){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function uid(){ return Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function firstGrapheme(s){
+  s = (s || '').trim();
+  if (!s) return '';
+  if (window.Intl && Intl.Segmenter){
+    for (const g of new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(s)) return g.segment;
+  }
+  return Array.from(s)[0];
+}
+function kidById(id){ return S.kids.find(k => k.id === id); }
+function choresFor(kidId, d = new Date()){
+  const day = d.getDay();
+  return S.chores.filter(c => c.kids.includes(kidId) && c.days.includes(day));
+}
+function doneVal(kidId, choreId){ const t = S.done[dateKey()]; return t ? t[kidId + ':' + choreId] : undefined; }
+function daysLabel(days){
+  const s = [...days].sort().join('');
+  if (s === '0123456') return 'Every day';
+  if (s === '12345') return 'Weekdays';
+  if (s === '06') return 'Weekends';
+  if (!days.length) return 'No days';
+  return [...days].sort((a,b) => ((a+6)%7) - ((b+6)%7)).map(i => DAYS[i]).join(', ');
+}
+function toast(msg){
+  let t = document.querySelector('.toast');
+  if (!t){ t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role','status'); document.body.appendChild(t); }
+  t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.style.opacity = 0; }, 2200);
+}
+function go(v){
+  view = v; pinBuf = '';
+  if (v.name !== 'pin'){ pinFirst = null; pinMsg = ''; }
+  render(); window.scrollTo(0,0);
+}
+
+/* ---------- views ---------- */
+function vHome(){
+  const dateStr = new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  let body;
+  if (!S.kids.length){
+    body = `<div class="empty"><div style="font-size:56px">⭐</div><p>No kids set up yet.</p><button class="btn" data-a="parent">Set up in parent mode</button></div>`;
+  } else {
+    body = `<div class="kids">` + S.kids.map(k => {
+      const list = choresFor(k.id);
+      const n = list.filter(c => doneVal(k.id, c.id)).length;
+      const pct = list.length ? Math.round(n / list.length * 100) : 0;
+      const sub = !list.length ? 'Nothing today' : (n === list.length ? 'All done today' : `${n} of ${list.length} done`);
+      return `<button class="kid" style="--c:${esc(k.color)}" data-a="kid" data-id="${esc(k.id)}">
+        <span class="avatar">${esc(k.emoji)}</span>
+        <span class="kmain"><span class="name">${esc(k.name)}</span><span class="sub">${sub}</span><span class="bar"><i style="width:${pct}%"></i></span></span>
+        <span class="starcount">⭐ ${S.stars[k.id] || 0}</span></button>`;
+    }).join('') + `</div>`;
+  }
+  return `<div class="top"><div class="date">${esc(dateStr)}</div><button class="gear" data-a="parent" aria-label="Parent mode">⚙️</button></div>${body}`;
+}
+
+function vKid(){
+  const k = kidById(view.id);
+  if (!k){ view = {name:'home'}; return vHome(); }
+  const list = choresFor(k.id);
+  const sections = PERIODS.map(p => {
+    const items = list.filter(c => c.period === p.id);
+    if (!items.length) return '';
+    return `<div class="period">${p.icon} ${p.label}</div>` + items.map(c => {
+      const dn = !!doneVal(k.id, c.id);
+      return `<button class="chore ${dn ? 'done' : ''}" data-a="toggle" data-id="${esc(c.id)}" aria-pressed="${dn}">
+        <span class="em">${esc(c.emoji)}</span>
+        <span class="t">${esc(c.title)}${c.stars > 1 ? ` <small>⭐${c.stars}</small>` : ''}</span>
+        <span class="check">${dn ? '✓' : ''}</span></button>`;
+    }).join('');
+  }).join('');
+  const all = list.length && list.every(c => doneVal(k.id, c.id));
+  return `<div class="top" style="--c:${esc(k.color)}">
+      <button class="back" data-a="home" aria-label="Back">‹</button>
+      <span class="avatar sm">${esc(k.emoji)}</span>
+      <span class="kname">${esc(k.name)}</span>
+      <span class="starcount" id="sc">⭐ ${S.stars[k.id] || 0}</span></div>
+    ${all ? `<div class="alldone">🎉 All done for today!</div>` : ''}
+    ${sections || '<div class="empty">No chores today.</div>'}`;
+}
+
+function vPin(){
+  const creating = !S.pin || pinChange;
+  const title = pinMsg || (creating
+    ? (pinFirst ? 'Enter it again to confirm' : (pinChange ? 'Enter a new 4-digit PIN' : 'Create a 4-digit parent PIN'))
+    : 'Parent PIN');
+  return `<div class="top"><button class="back" data-a="${pinChange ? 'pinback' : 'home'}" aria-label="Back">‹</button><span></span></div>
+    <div class="pin">
+      <div class="pinmsg">${esc(title)}</div>
+      <div class="dots" id="dots">${[0,1,2,3].map(i => `<i class="${i < pinBuf.length ? 'f' : ''}"></i>`).join('')}</div>
+      <div class="pad">${[1,2,3,4,5,6,7,8,9].map(n => `<button data-a="pin" data-n="${n}">${n}</button>`).join('')}
+        <span></span><button data-a="pin" data-n="0">0</button><button data-a="pindel" aria-label="Delete">⌫</button></div>
+    </div>`;
+}
+
+function vParent(){
+  const tab = view.tab || 'chores';
+  const tabs = [['chores','Chores'],['kids','Kids'],['stars','Stars'],['settings','Settings']];
+  const body = tab === 'kids' ? pKids() : tab === 'stars' ? pStars() : tab === 'settings' ? pSettings() : pChores();
+  return `<div class="top"><div class="date">Parent mode</div><button class="btn sm" data-a="exit">Done</button></div>
+    <div class="tabs">${tabs.map(([id,l]) => `<button class="tab ${id === tab ? 'on' : ''}" data-a="tab" data-id="${id}">${l}</button>`).join('')}</div>${body}`;
+}
+
+function pChores(){
+  if (!S.kids.length) return `<div class="empty">Add a kid first, then add chores.<br><br><button class="btn" data-a="tab" data-id="kids">Go to Kids</button></div>`;
+  let out = `<button class="btn block" data-a="newchore">Add chore</button>`;
+  for (const p of PERIODS){
+    const items = S.chores.filter(c => c.period === p.id);
+    out += `<div class="groupttl">${p.icon} ${p.label}</div>`;
+    if (!items.length){ out += `<p class="note">No ${p.label.toLowerCase()} chores yet.</p>`; continue; }
+    out += items.map((c,i) => {
+      const who = c.kids.map(id => kidById(id)?.name).filter(Boolean).join(', ') || 'No one assigned';
+      return `<div class="row"><span class="em">${esc(c.emoji)}</span>
+        <span class="t"><b>${esc(c.title)}</b><small>${esc(daysLabel(c.days))}, ${esc(who)}, ⭐${c.stars}</small></span>
+        <button class="icon" data-a="up" data-id="${esc(c.id)}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">▲</button>
+        <button class="icon" data-a="down" data-id="${esc(c.id)}" ${i === items.length-1 ? 'disabled' : ''} aria-label="Move down">▼</button>
+        <button class="icon" data-a="editchore" data-id="${esc(c.id)}" aria-label="Edit">✎</button></div>`;
+    }).join('');
+  }
+  return out;
+}
+
+function pKids(){
+  const list = S.kids.length
+    ? S.kids.map(k => `<div class="row"><span class="em">${esc(k.emoji)}</span>
+        <span class="t"><b>${esc(k.name)}</b><small>⭐ ${S.stars[k.id] || 0} stars</small></span>
+        <button class="icon" data-a="editkid" data-id="${esc(k.id)}" aria-label="Edit">✎</button></div>`).join('')
+    : `<div class="empty">Add each kid who will use the chore board.</div>`;
+  return `<button class="btn block" data-a="newkid">Add kid</button><div class="list">${list}</div>`;
+}
+
+function pStars(){
+  if (!S.kids.length) return `<div class="empty">No kids yet.</div>`;
+  return S.kids.map(k => `<div class="row"><span class="em">${esc(k.emoji)}</span>
+      <span class="t"><b>${esc(k.name)}</b><small>⭐ ${S.stars[k.id] || 0} stars</small></span>
+      <input type="number" class="redeem" id="r-${esc(k.id)}" min="1" inputmode="numeric" placeholder="0" aria-label="Stars to redeem for ${esc(k.name)}">
+      <button class="btn sm" data-a="redeem" data-id="${esc(k.id)}">Redeem</button></div>`).join('')
+    + `<p class="note">Redeeming takes stars off a kid's total when they cash them in.</p>`;
+}
+
+function pSettings(){
+  const lb = S.lastBackup ? new Date(S.lastBackup).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : 'never';
+  return `<div class="groupttl">Backup</div>
+    <p class="note">Everything is stored on this device only. Save a backup file now and then and keep it somewhere safe. Last backup: <b>${esc(lb)}</b>.</p>
+    <div class="actions" style="margin-top:8px"><button class="btn" data-a="export">Save backup</button><button class="btn alt" data-a="import">Restore backup</button></div>
+    <input type="file" id="fileIn" accept="application/json,.json" hidden>
+    <div class="groupttl">Parent PIN</div>
+    <button class="btn alt block" data-a="changepin">Change PIN</button>`;
+}
+
+function emojiField(current, options, action){
+  return `<div class="emoji-row"><span class="big">${esc(current || '❔')}</span>
+      <input type="text" id="emojiIn" placeholder="Type any emoji" aria-label="Type any emoji" autocomplete="off"></div>
+    <div class="emojis">${options.map(e => `<button data-a="${action}" data-e="${e}" class="${e === current ? 'on' : ''}">${e}</button>`).join('')}</div>`;
+}
+
+function vEditChore(){
+  const d = draft;
+  const isNew = !S.chores.some(c => c.id === d.id);
+  const presets = [['Every day','0123456'],['Weekdays','12345'],['Weekends','06']];
+  return `<div class="top"><button class="back" data-a="cancel" aria-label="Back">‹</button><div class="date" style="flex:1">${isNew ? 'New chore' : 'Edit chore'}</div></div>
+    <label class="f">Emoji</label>${emojiField(d.emoji, CHORE_EMOJIS, 'pickemoji')}
+    <label class="f" for="titleIn">Chore</label>
+    <input type="text" id="titleIn" maxlength="40" placeholder="Make your bed" value="${esc(d.title)}">
+    <label class="f">When</label>
+    <div class="chips">${PERIODS.map(p => `<button class="chip ${d.period === p.id ? 'on' : ''}" data-a="period" data-id="${p.id}">${p.icon} ${p.label}</button>`).join('')}</div>
+    <label class="f">Repeats</label>
+    <div class="chips">${presets.map(([l,ds]) => `<button class="chip ${daysLabel(d.days) === l ? 'on' : ''}" data-a="preset" data-d="${ds}">${l}</button>`).join('')}</div>
+    <div class="chips days" style="margin-top:8px">${[1,2,3,4,5,6,0].map(i => `<button class="chip ${d.days.includes(i) ? 'on' : ''}" data-a="day" data-d="${i}" aria-label="${DAYS[i]}">${DAY1[i]}</button>`).join('')}</div>
+    <label class="f">Who</label>
+    <div class="chips">${S.kids.map(k => `<button class="chip ${d.kids.includes(k.id) ? 'on' : ''}" data-a="who" data-id="${esc(k.id)}">${esc(k.emoji)} ${esc(k.name)}</button>`).join('')}</div>
+    <label class="f" for="starsIn">Stars earned</label>
+    <input type="number" id="starsIn" min="1" max="20" inputmode="numeric" value="${esc(d.stars)}">
+    <div class="actions"><button class="btn alt" data-a="cancel">Cancel</button><button class="btn" data-a="savechore">Save chore</button></div>
+    ${isNew ? '' : `<div class="actions"><button class="btn danger block" data-a="delchore">Delete chore</button></div>`}`;
+}
+
+function vEditKid(){
+  const d = draft;
+  const isNew = !S.kids.some(k => k.id === d.id);
+  return `<div class="top"><button class="back" data-a="cancel" aria-label="Back">‹</button><div class="date" style="flex:1">${isNew ? 'New kid' : 'Edit kid'}</div></div>
+    <label class="f" for="nameIn">Name</label>
+    <input type="text" id="nameIn" maxlength="20" value="${esc(d.name)}">
+    <label class="f">Avatar</label>${emojiField(d.emoji, KID_EMOJIS, 'pickemoji')}
+    <div class="actions"><button class="btn alt" data-a="cancel">Cancel</button><button class="btn" data-a="savekid">Save</button></div>
+    ${isNew ? '' : `<div class="actions"><button class="btn danger block" data-a="delkid">Remove ${esc(d.name)}</button></div>`}`;
+}
+
+function render(){
+  const v = view.name;
+  $app.innerHTML = v === 'kid' ? vKid() : v === 'pin' ? vPin() : v === 'parent' ? vParent()
+    : v === 'editChore' ? vEditChore() : v === 'editKid' ? vEditKid() : vHome();
+}
+
+/* ---------- actions ---------- */
+function toggle(choreId){
+  const kidId = view.id;
+  const c = S.chores.find(x => x.id === choreId);
+  if (!c) return;
+  const dk = dateKey();
+  S.done[dk] = S.done[dk] || {};
+  const key = kidId + ':' + c.id;
+  let earned = false;
+  if (S.done[dk][key]){
+    const val = Number(S.done[dk][key]) || 1; // stars actually given when it was checked
+    delete S.done[dk][key];
+    S.stars[kidId] = Math.max(0, (S.stars[kidId] || 0) - val);
+  } else {
+    const val = c.stars || 1;
+    S.done[dk][key] = val;
+    S.stars[kidId] = (S.stars[kidId] || 0) + val;
+    earned = true;
+  }
+  save(); render();
+  if (earned) flyStar(c.id);
+}
+
+function flyStar(id){
+  const check = $app.querySelector(`[data-id="${CSS.escape(id)}"] .check`);
+  const sc = document.getElementById('sc');
+  if (!check || !sc) return;
+  const bump = () => { sc.classList.remove('pop'); void sc.offsetWidth; sc.classList.add('pop'); };
+  if (reduced() || !Element.prototype.animate){ bump(); return; }
+  const a = check.getBoundingClientRect(), b = sc.getBoundingClientRect();
+  const s = document.createElement('span');
+  s.className = 'fly'; s.textContent = '⭐';
+  s.style.left = (a.left + a.width/2 - 15) + 'px';
+  s.style.top = (a.top + a.height/2 - 15) + 'px';
+  document.body.appendChild(s);
+  const dx = (b.left + 14) - (a.left + a.width/2), dy = (b.top + b.height/2) - (a.top + a.height/2);
+  const anim = s.animate([
+    {transform:'translate(0,0) scale(1)'},
+    {transform:`translate(${dx*0.5}px,${dy*0.5 - 40}px) scale(1.5)`, offset:.5},
+    {transform:`translate(${dx}px,${dy}px) scale(.8)`}
+  ], {duration:650, easing:'ease-in-out'});
+  anim.onfinish = () => { s.remove(); bump(); };
+}
+
+function pinPress(n){
+  if (pinBuf.length >= 4) return;
+  pinBuf += n; pinMsg = '';
+  if (pinBuf.length < 4){ render(); return; }
+  const entered = pinBuf; pinBuf = '';
+  if (!S.pin || pinChange){
+    if (!pinFirst){ pinFirst = entered; render(); return; }
+    if (pinFirst === entered){
+      S.pin = entered; save();
+      const wasChange = pinChange; pinChange = false;
+      go({name:'parent', tab: wasChange ? 'settings' : 'kids'});
+      if (wasChange) toast('PIN changed');
+    } else { pinFirst = null; pinMsg = "Those didn't match. Try again."; render(); shake(); }
+    return;
+  }
+  if (entered === S.pin) go({name:'parent', tab: S.kids.length ? 'chores' : 'kids'});
+  else { pinMsg = 'Wrong PIN'; render(); shake(); }
+}
+function shake(){
+  const d = document.getElementById('dots');
+  if (d && !reduced() && d.animate) d.animate([{transform:'translateX(0)'},{transform:'translateX(-10px)'},{transform:'translateX(10px)'},{transform:'translateX(0)'}],{duration:300});
+}
+
+function move(id, dir){
+  const c = S.chores.find(x => x.id === id);
+  if (!c) return;
+  const same = S.chores.map((x,i) => [x,i]).filter(([x]) => x.period === c.period);
+  const pos = same.findIndex(([x]) => x.id === id);
+  const tgt = same[pos + dir];
+  if (!tgt) return;
+  const i = same[pos][1], j = tgt[1];
+  [S.chores[i], S.chores[j]] = [S.chores[j], S.chores[i]];
+  save(); render();
+}
+
+function syncDraft(){
+  const t = document.getElementById('titleIn'); if (t) draft.title = t.value;
+  const n = document.getElementById('nameIn'); if (n) draft.name = n.value;
+  const s = document.getElementById('starsIn'); if (s) draft.stars = s.value;
+}
+
+function saveChore(){
+  const d = draft;
+  d.title = (d.title || '').trim();
+  const st = parseInt(d.stars, 10);
+  d.stars = Math.min(20, Math.max(1, isNaN(st) ? 1 : st));
+  if (!d.emoji) return toast('Pick an emoji');
+  if (!d.title) return toast('Give the chore a name');
+  if (!d.days.length) return toast('Pick at least one day');
+  if (!d.kids.length) return toast('Pick who does this chore');
+  const i = S.chores.findIndex(c => c.id === d.id);
+  if (i >= 0) S.chores[i] = d; else S.chores.push(d);
+  save(); go({name:'parent', tab:'chores'});
+}
+
+function saveKid(){
+  const d = draft;
+  d.name = (d.name || '').trim();
+  if (!d.name) return toast('Enter a name');
+  if (!d.emoji) return toast('Pick an avatar');
+  const i = S.kids.findIndex(k => k.id === d.id);
+  if (i >= 0) S.kids[i] = d; else S.kids.push(d);
+  if (S.stars[d.id] == null) S.stars[d.id] = 0;
+  save(); go({name:'parent', tab:'kids'});
+}
+
+function redeem(kidId){
+  const k = kidById(kidId);
+  const input = document.getElementById('r-' + kidId);
+  const n = parseInt(input && input.value, 10);
+  const bal = S.stars[kidId] || 0;
+  if (!(n > 0)) return toast('Enter how many stars to redeem');
+  if (n > bal) return toast(`${k.name} has only ${bal} stars`);
+  if (!confirm(`Redeem ${n} stars from ${k.name}?`)) return;
+  S.stars[kidId] = bal - n;
+  save(); render(); toast(`Redeemed ${n} stars from ${k.name}`);
+}
+
+function exportData(){
+  const data = JSON.stringify({app:'kitchen-chores', exported:new Date().toISOString(), data:S}, null, 2);
+  const name = `chores-backup-${dateKey()}.json`;
+  const markSaved = () => { S.lastBackup = Date.now(); save(); render(); toast('Backup saved'); };
+  try {
+    const file = new File([data], name, {type:'application/json'});
+    if (navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file], title:name}).then(markSaved).catch(err => {
+        if (err && err.name === 'AbortError') return;
+        download(data, name); markSaved();
+      });
+      return;
+    }
+  } catch(e){}
+  download(data, name); markSaved();
+}
+function download(data, name){
+  const url = URL.createObjectURL(new Blob([data], {type:'application/json'}));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+function importFile(file){
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const parsed = JSON.parse(r.result);
+      const incoming = normalize(parsed && parsed.data ? parsed.data : parsed);
+      if (!incoming.kids.length && !incoming.chores.length) return toast("That file doesn't look like a chores backup");
+      if (!confirm('Replace everything on this device with this backup?')) return;
+      if (!incoming.pin) incoming.pin = S.pin;
+      S = incoming; save(); go({name:'parent', tab:'chores'}); toast('Backup restored');
+    } catch(e){ toast("Couldn't read that file"); }
+  };
+  r.readAsText(file);
+}
+
+/* ---------- events ---------- */
+$app.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]');
+  if (!b || b.disabled) return;
+  const a = b.dataset.a, id = b.dataset.id;
+  const inEditor = view.name === 'editChore' || view.name === 'editKid';
+  if (inEditor) syncDraft();
+  switch (a){
+    case 'home': go({name:'home'}); break;
+    case 'kid': go({name:'kid', id}); break;
+    case 'toggle': toggle(id); break;
+    case 'parent': pinChange = false; go({name:'pin'}); break;
+    case 'pin': pinPress(b.dataset.n); break;
+    case 'pindel': pinBuf = pinBuf.slice(0,-1); render(); break;
+    case 'pinback': pinChange = false; go({name:'parent', tab:'settings'}); break;
+    case 'exit': go({name:'home'}); break;
+    case 'tab': go({name:'parent', tab:id}); break;
+    case 'newchore':
+      draft = {id:uid(), emoji:'', title:'', period:'morning', days:[0,1,2,3,4,5,6], kids:S.kids.map(k => k.id), stars:1};
+      go({name:'editChore'}); break;
+    case 'editchore': {
+      const c = S.chores.find(x => x.id === id);
+      if (c){ draft = JSON.parse(JSON.stringify(c)); go({name:'editChore'}); }
+      break;
+    }
+    case 'pickemoji': draft.emoji = b.dataset.e; render(); break;
+    case 'period': draft.period = id; render(); break;
+    case 'preset': draft.days = b.dataset.d.split('').map(Number); render(); break;
+    case 'day': { const n = +b.dataset.d; draft.days = draft.days.includes(n) ? draft.days.filter(x => x !== n) : [...draft.days, n]; render(); break; }
+    case 'who': draft.kids = draft.kids.includes(id) ? draft.kids.filter(x => x !== id) : [...draft.kids, id]; render(); break;
+    case 'savechore': saveChore(); break;
+    case 'delchore':
+      if (confirm('Delete this chore?')){ S.chores = S.chores.filter(c => c.id !== draft.id); save(); go({name:'parent', tab:'chores'}); }
+      break;
+    case 'cancel': go({name:'parent', tab: view.name === 'editKid' ? 'kids' : 'chores'}); break;
+    case 'up': move(id, -1); break;
+    case 'down': move(id, 1); break;
+    case 'newkid':
+      draft = {id:uid(), name:'', emoji:KID_EMOJIS[S.kids.length % KID_EMOJIS.length], color:KID_COLORS[S.kids.length % KID_COLORS.length]};
+      go({name:'editKid'}); break;
+    case 'editkid': { const k = kidById(id); if (k){ draft = {...k}; go({name:'editKid'}); } break; }
+    case 'savekid': saveKid(); break;
+    case 'delkid':
+      if (confirm(`Remove ${draft.name}? Their stars will be deleted too.`)){
+        S.kids = S.kids.filter(k => k.id !== draft.id);
+        S.chores.forEach(c => { c.kids = c.kids.filter(x => x !== draft.id); });
+        delete S.stars[draft.id];
+        save(); go({name:'parent', tab:'kids'});
+      }
+      break;
+    case 'redeem': redeem(id); break;
+    case 'export': exportData(); break;
+    case 'import': { const f = document.getElementById('fileIn'); if (f){ f.value = ''; f.click(); } break; }
+    case 'changepin': pinChange = true; go({name:'pin'}); break;
+  }
+});
+
+$app.addEventListener('input', e => {
+  if (e.target.id !== 'emojiIn' || !draft) return;
+  const g = firstGrapheme(e.target.value);
+  if (!g) return;
+  draft.emoji = g;
+  const big = $app.querySelector('.emoji-row .big');
+  if (big) big.textContent = g;
+  $app.querySelectorAll('.emojis button.on').forEach(x => x.classList.remove('on'));
+});
+
+$app.addEventListener('change', e => {
+  if (e.target.id === 'fileIn' && e.target.files && e.target.files[0]) importFile(e.target.files[0]);
+});
+
+document.addEventListener('pointerdown', () => { lastTouch = Date.now(); }, true);
+document.addEventListener('keydown', () => { lastTouch = Date.now(); }, true);
+
+function tick(){
+  const k = dateKey();
+  if (k !== lastDay){ lastDay = k; if (view.name === 'home' || view.name === 'kid') render(); }
+  if (view.name !== 'home' && Date.now() - lastTouch > IDLE_MS){ pinChange = false; go({name:'home'}); }
+}
+setInterval(tick, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+
+/* Home-screen icon: drawn at load so the page stays a single file. */
+(function makeIcon(){
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 180;
+    const x = c.getContext('2d');
+    x.fillStyle = '#14213D'; x.fillRect(0,0,180,180);
+    x.font = '110px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText('⭐', 90, 98);
+    const l = document.createElement('link'); l.rel = 'apple-touch-icon'; l.href = c.toDataURL('image/png');
+    document.head.appendChild(l);
+  } catch(e){}
+})();
+
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+render();
+})();
+</script>
+</body>
+</html>
