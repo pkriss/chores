@@ -119,7 +119,10 @@ const PERIODS = [{id:'morning',label:'Morning',icon:'☀️'},{id:'evening',labe
 const KID_COLORS = ['#4D7CFE','#F2547D','#7B5CF5','#12A3A3','#F08C00','#2F9E44'];
 const CHORE_EMOJIS = ['🛏️','🪥','👕','🧦','🧺','🍽️','🥣','🧹','🧽','🗑️','♻️','🐶','🐱','🌱','📚','🎒','✏️','🎹','🚿','🛁','👟','🧸','🥪','💧'];
 const KID_EMOJIS = ['🦊','🐼','🦄','🐯','🐸','🐙','🦋','🐨','🐵','🐰','🦁','🐳','🌟','🌈','🚀','🌻'];
-const IDLE_MS = 3 * 60 * 1000; // return to home screen after 3 minutes without a tap
+// Return to the home screen after this long without a tap.
+// The app checks every 30 seconds, so the actual return happens within 30 seconds after the limit.
+const KID_IDLE_MS = 30 * 1000;          // a kid's chore list and the PIN screen: 30-60 seconds
+const PARENT_IDLE_MS = 3 * 60 * 1000;   // parent mode and the editors: 3-3.5 minutes
 
 const $app = document.getElementById('app');
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -600,7 +603,8 @@ document.addEventListener('keydown', () => { lastTouch = Date.now(); }, true);
 function tick(){
   const k = dateKey();
   if (k !== lastDay){ lastDay = k; if (view.name === 'home' || view.name === 'kid') render(); }
-  if (view.name !== 'home' && Date.now() - lastTouch > IDLE_MS){ pinChange = false; go({name:'home'}); }
+  const limit = (view.name === 'kid' || view.name === 'pin') ? KID_IDLE_MS : PARENT_IDLE_MS;
+  if (view.name !== 'home' && Date.now() - lastTouch > limit){ pinChange = false; go({name:'home'}); }
 }
 setInterval(tick, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
